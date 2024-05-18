@@ -1,32 +1,41 @@
 const https = require("https");
 
-// URL to make the GET request
-const url = "https://jsonplaceholder.typicode.com/todos/1";
+const getTodoTitle = () => {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: "jsonplaceholder.typicode.com",
+      path: "/todos/1",
+      method: "GET",
+    };
 
-// Make a GET request
-const request = https.get(url, (response) => {
-  let data = "";
+    const request = https.request(options, (response) => {
+      let data = "";
 
-  // Accumulate data as it comes in
-  response.on("data", (chunk) => {
-    data += chunk;
+      response.on("data", (chunk) => {
+        data += chunk;
+      });
+
+      response.on("end", () => {
+        const actualTitle = JSON.parse(data).title;
+        resolve(actualTitle);
+      });
+    });
+
+    request.on("error", (err) => {
+      reject(`Error making HTTP request: ${err}`);
+    });
+
+    request.end();
   });
+};
 
-  // Parse JSON data when all chunks have been received
-  response.on("end", () => {
-    try {
-      // Parse JSON data
-      const todo = JSON.parse(data);
-
-      // Output the title of the first todo item
-      console.log("Title of the first todo:", todo.title);
-    } catch (error) {
-      console.error("Error parsing JSON:", error.message);
-    }
-  });
-});
-
-// Handle errors with the request
-request.on("error", (error) => {
-  console.error("Request error:", error.message);
-});
+if (require.main === module) {
+  getTodoTitle()
+    .then((title) => console.log(title))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+} else {
+  module.exports = getTodoTitle;
+}
